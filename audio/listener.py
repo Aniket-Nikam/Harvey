@@ -113,3 +113,123 @@ class AudioListener:
             except Exception:
                 pass
             return self.listen_via_microphone(duration)
+
+    def listen_continuous_vad(self, callback, stop_event, is_other=True):
+        """Continuously streams loopback or microphone audio, detects speech, and triggers the callback."""
+        import pyaudiowpatch as pyaudio
+        import time
+        import threading
+        
+        # 1. Resolve device index
+        device_idx = self.get_loopback_device_index() if is_other else None
+        if is_other and device_idx is None:
+            # Fallback to microphone if no loopback device is found
+            is_other = False
+            
+        p = pyaudio.PyAudio()
+        try:
+            if not is_other:
+                # Use default input device for microphone
+                dev_info = p.get_default_input_device_info()
+                device_idx = dev_info['index']
+            else:
+                dev_info = p.get_device_info_by_index(device_idx)
+                
+            rate = int(dev_info['defaultSampleRate'])
+            channels = int(dev_info['maxInputChannels'])
+            
+            stream = p.open(
+                format=pyaudio.paInt16,
+                channels=channels,
+                rate=rate,
+                input=True,
+                input_device_index=device_idx,
+                frames_per_buffer=1024
+            )
+            
+            speech_buffer = []
+            speech_active = False
+            silent_time_accumulated = 0.0
+            chunk_duration = 1024 / rate
+            
+            # Silence threshold (RMS normalized float: 0.015 is standard voice activity threshold)
+            threshold = 0.015
+            
+            while not stop_event.is_set():
+                # Read frames without blocking if loopback has no output
+                available = stream.get_read_available()
+                if available >= 1024:
+                    data = stream.read(1024, exception_on_overflow=False)
+                    chunk = np.frombuffer(data, dtype=np.int16)
+                    
+                    # Convert to normalized float for RMS computation
+                    chunk_float = chunk.astype(np.float32) / 32768.0
+                    rms = np.sqrt(np.mean(chunk_float**2)) if len(chunk_float) > 0 else 0.0
+                    
+                    if rms > threshold:
+                        if not speech_active:
+                            speech_active = True
+                        speech_buffer.append(chunk)
+                        silent_time_accumulated = 0.0
+                    else:
+                        if speech_active:
+                            speech_buffer.append(chunk)
+                            silent_time_accumulated += chunk_duration
+                            
+                            # If silent for more than 1.5 seconds, process speech
+                            if silent_time_accumulated >= 1.5:
+                                speech_data = np.concatenate(speech_buffer)
+                                # Convert to mono
+                                if channels > 1:
+                                    speech_data = speech_data.reshape(-1, channels).mean(axis=1)
+                                # Resample to 16000Hz
+                                if rate != 16000:
+                                    num_samples = int(len(speech_data) * 16000 / rate)
+                                    speech_data = np.interp(
+                                        np.linspace(0, len(speech_data) - 1, num_samples),
+                                        np.arange(len(speech_data)),
+                                        speech_data
+                                    )
+                                # Normalize
+                                normalized_audio = speech_data.astype(np.float32) / 32768.0
+                                
+                                # Call the callback
+                                threading.Thread(target=callback, args=(normalized_audio,), daemon=True).start()
+                                
+                                # Reset buffers
+                                speech_buffer = []
+                                speech_active = False
+                                silent_time_accumulated = 0.0
+                                
+                    # Safety cutoff at 20 seconds of continuous speech
+                    if len(speech_buffer) * chunk_duration > 20.0:
+                        # Process immediately
+                        speech_data = np.concatenate(speech_buffer)
+                        if channels > 1:
+                            speech_data = speech_data.reshape(-1, channels).mean(axis=1)
+                        if rate != 16000:
+                            num_samples = int(len(speech_data) * 16000 / rate)
+                            speech_data = np.interp(
+                                np.linspace(0, len(speech_data) - 1, num_samples),
+                                np.arange(len(speech_data)),
+                                speech_data
+                            )
+                        normalized_audio = speech_data.astype(np.float32) / 32768.0
+                        threading.Thread(target=callback, args=(normalized_audio,), daemon=True).start()
+                        
+                        speech_buffer = []
+                        speech_active = False
+                        silent_time_accumulated = 0.0
+                else:
+                    time.sleep(0.02)
+                    
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+            
+        except Exception as e:
+            print(f"Error in continuous VAD listener: {e}")
+            try:
+                p.terminate()
+            except Exception:
+                pass

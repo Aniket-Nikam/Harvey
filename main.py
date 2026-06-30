@@ -59,6 +59,11 @@ class StealthQnAAssistant:
         self.running = True
         self.is_sharing = False
         
+        # Setup Auto-Pilot state
+        self.autopilot_running = False
+        self.autopilot_stop_event = threading.Event()
+        self.window.autopilot_callback = self.toggle_autopilot
+        
         # Setup hotkeys and connect trigger callback
         self.window.trigger_callback = self.run_mode_action
         self.setup_hotkeys()
@@ -222,7 +227,69 @@ class StealthQnAAssistant:
             self.running = False
             self.cleanup()
     
+    def toggle_autopilot(self, enabled):
+        if enabled:
+            if not self.autopilot_running:
+                self.autopilot_running = True
+                self.autopilot_stop_event.clear()
+                threading.Thread(target=self.run_autopilot_loop, daemon=True).start()
+                self.window.show_message("Auto-Pilot Mode enabled.")
+        else:
+            if self.autopilot_running:
+                self.autopilot_running = False
+                self.autopilot_stop_event.set()
+                self.window.show_message("Auto-Pilot Mode disabled.")
+
+    def run_autopilot_loop(self):
+        while self.autopilot_running and not self.autopilot_stop_event.is_set():
+            mode = self.window.mode_var.get()
+            is_other = (mode != "listen_self")
+            try:
+                self.audio_listener.listen_continuous_vad(
+                    callback=self.on_autopilot_speech_detected,
+                    stop_event=self.autopilot_stop_event,
+                    is_other=is_other
+                )
+            except Exception as e:
+                self.logger.error(f"Error in autopilot loop: {e}")
+                time.sleep(1.0)
+
+    def on_autopilot_speech_detected(self, audio_data):
+        try:
+            self.window.show_message("Speech detected! Transcribing...")
+            transcription = self.audio_processor.transcribe(audio_data)
+            if not transcription or not transcription.strip():
+                self.window.show_message("Speech detected, but transcription was empty.")
+                return
+                
+            self.window.show_message(f"Auto Speech Query: \"{transcription}\"")
+            self.window.show_message("Generating AI response...")
+            
+            style = self.window.style_var.get()
+            word_limit = self.window.words_var.get()
+            
+            system_instruction = (
+                "You are an expert QnA assistant for technical screenshares and developer calls.\n"
+                f"Desired Style: {style}\n"
+                f"Constraint: Answer in maximum {word_limit} words. Be highly precise, concise, and prioritize direct answers."
+            )
+            
+            screen_ctx = self.memory.get_latest_context()
+            response = self.ai_client.get_response(
+                question=f"User Speech Query: {transcription}\nProvide the solution/answer matching this query.",
+                history=self.memory.get_history(),
+                screen_context=screen_ctx,
+                system_instruction=system_instruction
+            )
+            
+            self.memory.add_exchange(transcription, response)
+            self.window.display_response(response)
+        except Exception as e:
+            self.logger.error(f"Error processing autopilot speech: {e}")
+
     def cleanup(self):
+        self.autopilot_running = False
+        self.autopilot_stop_event.set()
         try:
             self.window.root.destroy()
         except Exception:

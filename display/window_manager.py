@@ -60,11 +60,20 @@ class AssistantWindow:
                                      font=('Consolas', 8), length=100)
         self.words_slider.grid(row=1, column=4, sticky='w', padx=4, pady=2)
         
-        # Row 3: Action Trigger Button
-        self.trigger_btn = tk.Button(settings_frame, text="RUN ACTIVE MODE (F5)", command=self.on_trigger_click,
+        # Row 3: Auto-Pilot Checkbox + Action Button
+        self.autopilot_var = tk.BooleanVar(value=False)
+        self.autopilot_callback = None
+        self.autopilot_cb = tk.Checkbutton(settings_frame, text="Auto-Pilot", variable=self.autopilot_var,
+                                           command=self.on_autopilot_change,
+                                           bg='#1a1a1a', fg='lime', selectcolor='#121212',
+                                           activebackground='#1a1a1a', activeforeground='lime',
+                                           font=('Consolas', 9, 'bold'))
+        self.autopilot_cb.grid(row=2, column=0, columnspan=3, sticky='w', padx=5, pady=6)
+        
+        self.trigger_btn = tk.Button(settings_frame, text="RUN ACTIVE (F5)", command=self.on_trigger_click,
                                      bg='lime', fg='black', activebackground='#bfff00', activeforeground='black',
                                      font=('Consolas', 9, 'bold'), relief=tk.FLAT, bd=0)
-        self.trigger_btn.grid(row=2, column=0, columnspan=5, sticky='ew', padx=5, pady=6)
+        self.trigger_btn.grid(row=2, column=3, columnspan=2, sticky='ew', padx=5, pady=6)
         
         # Text Output Area
         text_frame = tk.Frame(self.root, bg='#121212', bd=1, relief=tk.FLAT)
@@ -79,6 +88,10 @@ class AssistantWindow:
     def on_trigger_click(self):
         if self.trigger_callback:
             self.trigger_callback(self.mode_var.get())
+            
+    def on_autopilot_change(self):
+        if self.autopilot_callback:
+            self.autopilot_callback(self.autopilot_var.get())
     
     def on_close(self):
         self.root.quit()  # Quit the mainloop
