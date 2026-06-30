@@ -161,14 +161,15 @@ class StealthQnAAssistant:
         """Main pipeline: listen, transcribe, AI respond, display."""
         try:
             mode_desc = "Partner (Loopback)" if is_other else "Self (Microphone)"
-            self.window.show_message(f"Listening to {mode_desc}...")
+            duration = self.window.duration_var.get()
+            self.window.show_message(f"Listening to {mode_desc} for {duration}s...")
             
             if is_other:
                 # Capture system audio loopback
-                audio_data = self.audio_listener.listen_for_question()
+                audio_data = self.audio_listener.listen_for_question(duration=duration)
             else:
                 # Capture microphone audio
-                audio_data = self.audio_listener.listen_via_microphone()
+                audio_data = self.audio_listener.listen_via_microphone(duration=duration)
                 
             if audio_data is None:
                 self.window.show_message("No audio detected.")

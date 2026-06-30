@@ -60,7 +60,17 @@ class AssistantWindow:
                                      font=('Consolas', 8), length=100)
         self.words_slider.grid(row=1, column=4, sticky='w', padx=4, pady=2)
         
-        # Row 3: Auto-Pilot Checkbox + Clear Button + Action Button
+        # Row 3: Listen Duration & Auto-Pilot & Clear Button
+        duration_label = tk.Label(settings_frame, text="Time:", bg='#1a1a1a', fg='#a0a0a0', font=('Consolas', 9, 'bold'))
+        duration_label.grid(row=2, column=0, sticky='w', padx=5, pady=4)
+        
+        self.duration_var = tk.IntVar(value=30)
+        self.duration_slider = tk.Scale(settings_frame, from_=10, to=60, orient=tk.HORIZONTAL, variable=self.duration_var,
+                                        bg='#1a1a1a', fg='white', troughcolor='#121212', activebackground='lime',
+                                        highlightthickness=0, borderwidth=0, showvalue=True, resolution=5,
+                                        font=('Consolas', 8), length=90)
+        self.duration_slider.grid(row=2, column=1, sticky='w', padx=4, pady=2)
+        
         self.autopilot_var = tk.BooleanVar(value=False)
         self.autopilot_callback = None
         self.clear_callback = None
@@ -69,17 +79,18 @@ class AssistantWindow:
                                            bg='#1a1a1a', fg='lime', selectcolor='#121212',
                                            activebackground='#1a1a1a', activeforeground='lime',
                                            font=('Consolas', 9, 'bold'))
-        self.autopilot_cb.grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=6)
+        self.autopilot_cb.grid(row=2, column=2, columnspan=2, sticky='w', padx=5, pady=6)
         
         self.clear_btn = tk.Button(settings_frame, text="CLEAR", command=self.on_clear_click,
                                    bg='#3c1414', fg='white', activebackground='#ff3333', activeforeground='white',
                                    font=('Consolas', 9, 'bold'), relief=tk.FLAT, bd=0)
-        self.clear_btn.grid(row=2, column=2, sticky='ew', padx=4, pady=6)
+        self.clear_btn.grid(row=2, column=4, sticky='ew', padx=4, pady=6)
         
+        # Row 4: Action Trigger Button (Stretched)
         self.trigger_btn = tk.Button(settings_frame, text="RUN ACTIVE (F5)", command=self.on_trigger_click,
                                      bg='lime', fg='black', activebackground='#bfff00', activeforeground='black',
                                      font=('Consolas', 9, 'bold'), relief=tk.FLAT, bd=0)
-        self.trigger_btn.grid(row=2, column=3, columnspan=2, sticky='ew', padx=5, pady=6)
+        self.trigger_btn.grid(row=3, column=0, columnspan=5, sticky='ew', padx=5, pady=6)
         
         # Text Output Area
         text_frame = tk.Frame(self.root, bg='#121212', bd=1, relief=tk.FLAT)
