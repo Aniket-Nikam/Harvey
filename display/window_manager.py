@@ -136,30 +136,32 @@ class AssistantWindow:
         return self.hwnd
     
     def show(self):
-        self.root.deiconify()
-        self.hidden = False
-        
-        # Exclude window from screenshots and screen recording permanently
-        if self.config['display'].get('stealth_mode', True):
-            import logging
-            logger = logging.getLogger(__name__)
-            try:
-                self.root.update()  # Force map/create frame structures in OS immediately
-                hwnd = self.get_hwnd()
-                if hwnd:
-                    import ctypes
-                    # WDA_EXCLUDEFROMCAPTURE = 0x00000011 (completely hides window from screen capture/sharing)
-                    success = ctypes.windll.user32.SetWindowDisplayAffinity(hwnd, 0x00000011)
-                    if not success:
-                        success = ctypes.windll.user32.SetWindowDisplayAffinity(hwnd, 0x00000001)
-                    logger.info(f"Stealth display affinity applied to HWND {hwnd}: success={success}")
-                else:
-                    logger.error("Failed to apply display affinity: HWND not resolved.")
-            except Exception as e:
-                logger.error(f"Failed to apply display affinity: {e}")
+        def _show():
+            self.root.deiconify()
+            self.hidden = False
+            
+            # Exclude window from screenshots and screen recording permanently
+            if self.config['display'].get('stealth_mode', True):
+                import logging
+                logger = logging.getLogger(__name__)
+                try:
+                    self.root.update()  # Force map/create frame structures in OS immediately
+                    hwnd = self.get_hwnd()
+                    if hwnd:
+                        import ctypes
+                        # WDA_EXCLUDEFROMCAPTURE = 0x00000011 (completely hides window from screen capture/sharing)
+                        success = ctypes.windll.user32.SetWindowDisplayAffinity(hwnd, 0x00000011)
+                        if not success:
+                            success = ctypes.windll.user32.SetWindowDisplayAffinity(hwnd, 0x00000001)
+                        logger.info(f"Stealth display affinity applied to HWND {hwnd}: success={success}")
+                    else:
+                        logger.error("Failed to apply display affinity: HWND not resolved.")
+                except Exception as e:
+                    logger.error(f"Failed to apply display affinity: {e}")
+        self.root.after(0, _show)
     
     def hide(self):
-        self.root.withdraw()
+        self.root.after(0, lambda: self.root.withdraw())
         self.hidden = True
     
     def toggle_visibility(self):

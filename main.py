@@ -126,7 +126,7 @@ class StealthQnAAssistant:
             return
             
         context = self.screen_capturer.analyze(screenshot)
-        if "Failed to analyze" in context or "OCR Error" in context:
+        if "Failed to analyze" in context or "OCR Error" in context or "Failed to run local OCR" in context or "No screen content" in context:
             self.window.show_message(context)
             return
             
@@ -140,9 +140,10 @@ class StealthQnAAssistant:
             word_limit = self.window.words_var.get()
             
             system_instruction = (
-                "You are an expert QnA assistant for technical screenshares and developer calls.\n"
-                f"Desired Style: {style}\n"
-                f"Constraint: Answer in maximum {word_limit} words. Be highly precise, concise, and prioritize direct answers."
+                "You are Harvey, an expert real-time assistant for developers and presenters.\n"
+                "Your task is to analyze the screen content and solve, answer, or explain any questions or code visible on the screen.\n"
+                f"Answering Style: {style}\n"
+                f"Word Limit: Max {word_limit} words. Be highly precise, direct, and concise."
             )
             
             response = self.ai_client.get_response(
