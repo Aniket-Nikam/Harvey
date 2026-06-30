@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+stealth_qna.log
+*.log
+venv/
+.idea/
+.vscode/
+build/
+dist/
+*.spec

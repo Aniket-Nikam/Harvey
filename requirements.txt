@@ -1,0 +1,13 @@
+pyyaml
+pynput
+psutil
+pywin32
+sounddevice
+PyAudioWPatch
+openai-whisper
+numpy
+torch  # for whisper
+mss
+pillow
+groq
+python-dotenv

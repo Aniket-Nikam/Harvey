@@ -1,0 +1,37 @@
+# Stealth QnA Assistant Configuration
+api:
+  groq_key: ""
+  gemini_key: ""  # Fallback
+  model: "llama-3.3-70b-versatile"  # or groq preferred model
+  fallback_model: "llama-3.1-8b-instant"
+
+display:
+  window_title: "Meeting Assistant"
+  position: "bottom_right"  # options: top_left, etc.
+  size: [450, 400]
+  opacity: 0.95
+  always_on_top: true
+  stealth_mode: true
+
+hotkeys:
+  listen_other: "f2"
+  listen_self: "f3"
+  screen_capture: "f4"
+
+stealth:
+  process_name_mask: "SystemService"
+  detect_apps:
+    - zoom.exe
+    - Teams.exe
+    - chrome.exe  # for Meet
+    - WebexHost.exe
+
+audio:
+  sample_rate: 16000
+  vad_sensitivity: 0.5
+  whisper_model: "base"  # tiny, base, small for local
+
+general:
+  log_level: "info"
+  enable_tts: false
+  multi_monitor: true
