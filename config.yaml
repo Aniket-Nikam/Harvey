@@ -1,4 +1,4 @@
-# Stealth QnA Assistant Configuration
+# Harvey Configuration
 api:
   groq_key: ""
   gemini_key: ""  # Fallback
@@ -6,7 +6,7 @@ api:
   fallback_model: "llama-3.1-8b-instant"
 
 display:
-  window_title: "Meeting Assistant"
+  window_title: "Harvey"
   position: "bottom_right"  # options: top_left, etc.
   size: [450, 400]
   opacity: 0.95

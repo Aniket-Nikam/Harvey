@@ -1,6 +1,6 @@
 @echo off
 echo ==============================================
-echo   Stealth QnA Assistant - Local Runner
+echo   Harvey - Local Runner
 echo ==============================================
 
 echo [1/3] Checking for Python installation...
@@ -20,9 +20,9 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 echo.
-echo [3/3] Starting Stealth QnA Assistant...
+echo [3/3] Starting Harvey...
 echo.
-echo NOTE: Since the app uses global keyboard hooks to listen to inputs (Ctrl+Alt+G / Ctrl+Alt+S / Ctrl+Alt+H),
+echo NOTE: Since the app uses global keyboard hooks to listen to inputs (F2 / F3 / F4 / F5),
 echo you may need to run this batch file as Administrator if the hotkeys do not register.
 echo.
 

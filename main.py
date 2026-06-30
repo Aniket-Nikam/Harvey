@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stealth QnA Assistant - Real-time AI for screen-shared meetings.
+Harvey - Real-time AI for screen-shared meetings.
 Production-grade, low-latency, user-only visibility.
 """
 
@@ -63,8 +63,8 @@ class StealthQnAAssistant:
         self.window.trigger_callback = self.run_mode_action
         self.setup_hotkeys()
         
-        self.logger.info("Stealth QnA Assistant initialized.")
-        self.window.show_message("=== Stealth QnA Assistant Initialized ===\n"
+        self.logger.info("Harvey initialized.")
+        self.window.show_message("=== Harvey Initialized ===\n"
                                  f"• F2: Listen to Meeting Partner (Loopback)\n"
                                  f"• F3: Listen to Yourself (Microphone)\n"
                                  f"• F4: Capture Screen Context (Local OCR)\n"
