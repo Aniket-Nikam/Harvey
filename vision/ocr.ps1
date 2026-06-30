@@ -1,40 +1,44 @@
 $ErrorActionPreference = 'Stop'
 $imagePath = $args[0]
 
-$source = @"
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using Windows.Storage;
-using Windows.Graphics.Imaging;
-using Windows.Media.Ocr;
+# 1. Load Windows Runtime (WinRT) class types dynamically
+$StorageFileClass = [Windows.Storage.StorageFile, Windows.Storage, ContentType = WindowsRuntime]
+$BitmapDecoderClass = [Windows.Graphics.Imaging.BitmapDecoder, Windows.Graphics.Imaging, ContentType = WindowsRuntime]
+$OcrEngineClass = [Windows.Media.Ocr.OcrEngine, Windows.Media.Ocr, ContentType = WindowsRuntime]
 
-public class OcrHelper {
-    public static string Recognize(string imagePath) {
-        try {
-            var file = StorageFile.GetFileFromPathAsync(imagePath).GetAwaiter().GetResult();
-            var stream = file.OpenAsync(FileAccessMode.Read).GetAwaiter().GetResult();
-            var decoder = BitmapDecoder.CreateAsync(stream).GetAwaiter().GetResult();
-            var bitmap = decoder.GetSoftwareBitmapAsync().GetAwaiter().GetResult();
-            var engine = OcrEngine.TryCreateFromUserProfileLanguages();
-            if (engine == null) {
-                return "OCR Error: OCR Engine could not be created (check if language packs are installed).";
-            }
-            var result = engine.RecognizeAsync(bitmap).GetAwaiter().GetResult();
-            return result.Text;
-        } catch (Exception e) {
-            return "OCR Error: " + e.Message;
-        }
+try {
+    # 2. Open the image file asynchronously
+    $fileAsync = $StorageFileClass::GetFileFromPathAsync($imagePath)
+    while (-not $fileAsync.IsCompleted) { Start-Sleep -Milliseconds 5 }
+    $file = $fileAsync.GetResults()
+
+    # 3. Open stream for read
+    $streamAsync = $file.OpenAsync([Windows.Storage.FileAccessMode]::Read)
+    while (-not $streamAsync.IsCompleted) { Start-Sleep -Milliseconds 5 }
+    $stream = $streamAsync.GetResults()
+
+    # 4. Decode bitmap
+    $decoderAsync = $BitmapDecoderClass::CreateAsync($stream)
+    while (-not $decoderAsync.IsCompleted) { Start-Sleep -Milliseconds 5 }
+    $decoder = $decoderAsync.GetResults()
+
+    $bitmapAsync = $decoder.GetSoftwareBitmapAsync()
+    while (-not $bitmapAsync.IsCompleted) { Start-Sleep -Milliseconds 5 }
+    $bitmap = $bitmapAsync.GetResults()
+
+    # 5. Initialize OCR Engine and analyze
+    $engine = $OcrEngineClass::TryCreateFromUserProfileLanguages()
+    if ($null -eq $engine) {
+        Write-Output "OCR Error: OCR Engine could not be created."
+        exit 1
     }
+
+    $ocrAsync = $engine.RecognizeAsync($bitmap)
+    while (-not $ocrAsync.IsCompleted) { Start-Sleep -Milliseconds 5 }
+    $ocrResult = $ocrAsync.GetResults()
+
+    Write-Output $ocrResult.Text
+} catch {
+    Write-Output "OCR Error: $_"
+    exit 1
 }
-"@
-
-Add-Type -TypeDefinition $source -ReferencedAssemblies @(
-    "System.Runtime.WindowsRuntime",
-    "C:\Windows\System32\WinMetadata\Windows.Foundation.winmd",
-    "C:\Windows\System32\WinMetadata\Windows.Storage.winmd",
-    "C:\Windows\System32\WinMetadata\Windows.Graphics.winmd",
-    "C:\Windows\System32\WinMetadata\Windows.Media.winmd"
-)
-
-[OcrHelper]::Recognize($imagePath)

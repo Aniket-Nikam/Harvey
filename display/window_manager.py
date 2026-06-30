@@ -60,15 +60,21 @@ class AssistantWindow:
                                      font=('Consolas', 8), length=100)
         self.words_slider.grid(row=1, column=4, sticky='w', padx=4, pady=2)
         
-        # Row 3: Auto-Pilot Checkbox + Action Button
+        # Row 3: Auto-Pilot Checkbox + Clear Button + Action Button
         self.autopilot_var = tk.BooleanVar(value=False)
         self.autopilot_callback = None
+        self.clear_callback = None
         self.autopilot_cb = tk.Checkbutton(settings_frame, text="Auto-Pilot", variable=self.autopilot_var,
                                            command=self.on_autopilot_change,
                                            bg='#1a1a1a', fg='lime', selectcolor='#121212',
                                            activebackground='#1a1a1a', activeforeground='lime',
                                            font=('Consolas', 9, 'bold'))
-        self.autopilot_cb.grid(row=2, column=0, columnspan=3, sticky='w', padx=5, pady=6)
+        self.autopilot_cb.grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=6)
+        
+        self.clear_btn = tk.Button(settings_frame, text="CLEAR", command=self.on_clear_click,
+                                   bg='#3c1414', fg='white', activebackground='#ff3333', activeforeground='white',
+                                   font=('Consolas', 9, 'bold'), relief=tk.FLAT, bd=0)
+        self.clear_btn.grid(row=2, column=2, sticky='ew', padx=4, pady=6)
         
         self.trigger_btn = tk.Button(settings_frame, text="RUN ACTIVE (F5)", command=self.on_trigger_click,
                                      bg='lime', fg='black', activebackground='#bfff00', activeforeground='black',
@@ -98,6 +104,10 @@ class AssistantWindow:
     def on_autopilot_change(self):
         if self.autopilot_callback:
             self.autopilot_callback(self.autopilot_var.get())
+
+    def on_clear_click(self):
+        if self.clear_callback:
+            self.clear_callback()
     
     def on_close(self):
         self.root.quit()  # Quit the mainloop

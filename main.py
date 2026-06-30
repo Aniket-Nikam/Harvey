@@ -63,6 +63,7 @@ class StealthQnAAssistant:
         self.autopilot_running = False
         self.autopilot_stop_event = threading.Event()
         self.window.autopilot_callback = self.toggle_autopilot
+        self.window.clear_callback = self.clear_conversation_memory
         
         # Setup hotkeys and connect trigger callback
         self.window.trigger_callback = self.run_mode_action
@@ -186,9 +187,13 @@ class StealthQnAAssistant:
             word_limit = self.window.words_var.get()
             
             system_instruction = (
-                "You are an expert QnA assistant for technical screenshares and developer calls.\n"
-                f"Desired Style: {style}\n"
-                f"Constraint: Answer in maximum {word_limit} words. Be highly precise, concise, and prioritize direct answers."
+                "You are Harvey, an expert real-time assistant for developers and presenters.\n"
+                "Your primary task is to solve, answer, or explain the user's SPEECH QUERY directly.\n"
+                "The 'Screen Context' contains text/code extracted from their display. Use it ONLY as supporting background if the user explicitly asks about what is on their screen.\n"
+                "If the speech query is unrelated to the screen context (or if the screen context is an old error message and the user is speaking about a business/different topic), IGNORE the screen context entirely.\n"
+                "Do not reference screen context errors or mention them unless the speech query is about them.\n"
+                f"Answering Style: {style}\n"
+                f"Word Limit: Max {word_limit} words. Be highly precise, direct, and concise."
             )
             
             screen_ctx = self.memory.get_latest_context()
@@ -274,13 +279,18 @@ class StealthQnAAssistant:
                 
             self.window.show_message("Generating AI response...")
             
+            # Read styles and word limits dynamically from UI
             style = self.window.style_var.get()
             word_limit = self.window.words_var.get()
             
             system_instruction = (
-                "You are an expert QnA assistant for technical screenshares and developer calls.\n"
-                f"Desired Style: {style}\n"
-                f"Constraint: Answer in maximum {word_limit} words. Be highly precise, concise, and prioritize direct answers."
+                "You are Harvey, an expert real-time assistant for developers and presenters.\n"
+                "Your primary task is to solve, answer, or explain the user's SPEECH QUERY directly.\n"
+                "The 'Screen Context' contains text/code extracted from their display. Use it ONLY as supporting background if the user explicitly asks about what is on their screen.\n"
+                "If the speech query is unrelated to the screen context (or if the screen context is an old error message and the user is speaking about a business/different topic), IGNORE the screen context entirely.\n"
+                "Do not reference screen context errors or mention them unless the speech query is about them.\n"
+                f"Answering Style: {style}\n"
+                f"Word Limit: Max {word_limit} words. Be highly precise, direct, and concise."
             )
             
             mode = self.window.mode_var.get()
@@ -298,6 +308,11 @@ class StealthQnAAssistant:
             self.window.display_qa(speaker_desc, transcription, response)
         except Exception as e:
             self.logger.error(f"Error processing autopilot speech: {e}")
+
+    def clear_conversation_memory(self):
+        self.memory.history = []
+        self.memory.contexts = []
+        self.window.show_message("=== Conversation History & Screen Context Cleared ===")
 
     def cleanup(self):
         self.autopilot_running = False
