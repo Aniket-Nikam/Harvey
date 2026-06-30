@@ -108,7 +108,18 @@ class StealthQnAAssistant:
             
     def capture_screen_context(self):
         self.window.show_message("Capturing screen for context...")
-        screenshot = self.screen_capturer.capture()
+        
+        # Hide window temporarily to avoid feedback loop (reading itself)
+        self.window.hide()
+        # Allow Windows Desktop Manager a brief moment to redraw the screen underneath
+        time.sleep(0.15)
+        
+        try:
+            screenshot = self.screen_capturer.capture()
+        finally:
+            # Always restore the window, even if capture fails
+            self.window.show()
+            
         if not screenshot:
             self.window.show_message("Failed to capture screen.")
             return
@@ -140,7 +151,7 @@ class StealthQnAAssistant:
                 system_instruction=system_instruction
             )
             self.memory.add_exchange("[Screen Capture Query]", response)
-            self.window.display_response(response)
+            self.window.display_qa("Screen Context", "Local OCR Capture", response)
         except Exception as e:
             self.logger.error(f"Error analyzing screen independently: {e}")
             self.window.show_message("Error analyzing screen content.")
@@ -168,7 +179,6 @@ class StealthQnAAssistant:
                 self.window.show_message("Could not transcribe speech.")
                 return
                 
-            self.window.show_message(f"Speech Query: \"{transcription}\"")
             self.window.show_message("Generating AI response...")
             
             # Read styles and word limits dynamically from UI
@@ -190,7 +200,7 @@ class StealthQnAAssistant:
             )
             
             self.memory.add_exchange(transcription, response)
-            self.window.display_response(response)
+            self.window.display_qa(mode_desc, transcription, response)
             
         except Exception as e:
             self.logger.error(f"Error processing query: {e}")
@@ -262,7 +272,6 @@ class StealthQnAAssistant:
                 self.window.show_message("Speech detected, but transcription was empty.")
                 return
                 
-            self.window.show_message(f"Auto Speech Query: \"{transcription}\"")
             self.window.show_message("Generating AI response...")
             
             style = self.window.style_var.get()
@@ -274,6 +283,9 @@ class StealthQnAAssistant:
                 f"Constraint: Answer in maximum {word_limit} words. Be highly precise, concise, and prioritize direct answers."
             )
             
+            mode = self.window.mode_var.get()
+            speaker_desc = "Partner (Auto)" if mode != "listen_self" else "Self (Auto)"
+            
             screen_ctx = self.memory.get_latest_context()
             response = self.ai_client.get_response(
                 question=f"User Speech Query: {transcription}\nProvide the solution/answer matching this query.",
@@ -283,7 +295,7 @@ class StealthQnAAssistant:
             )
             
             self.memory.add_exchange(transcription, response)
-            self.window.display_response(response)
+            self.window.display_qa(speaker_desc, transcription, response)
         except Exception as e:
             self.logger.error(f"Error processing autopilot speech: {e}")
 

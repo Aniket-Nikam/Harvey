@@ -83,6 +83,12 @@ class AssistantWindow:
                                                    font=('Consolas', 10), insertbackground='lime', bd=0)
         self.text_area.pack(fill=tk.BOTH, expand=True)
         
+        # Configure tags for beautiful formatting
+        self.text_area.tag_config("header", foreground="#39ff14", font=('Consolas', 10, 'bold')) # Neon green
+        self.text_area.tag_config("query", foreground="#a0a0a0", font=('Consolas', 9, 'italic')) # Muted gray
+        self.text_area.tag_config("answer", foreground="white", font=('Consolas', 10)) # Crisp white
+        self.text_area.tag_config("divider", foreground="#444444") # Dark gray divider
+        
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         
     def on_trigger_click(self):
@@ -141,9 +147,20 @@ class AssistantWindow:
         else:
             self.hide()
     
+    def display_qa(self, speaker, query, answer):
+        def _insert():
+            import time
+            timestamp = time.strftime('%H:%M:%S')
+            self.text_area.insert(tk.END, f"\n=== [{timestamp}] Spoken by: {speaker} ===\n", "header")
+            self.text_area.insert(tk.END, f"Query: \"{query}\"\n", "query")
+            self.text_area.insert(tk.END, f"Answer:\n{answer}\n", "answer")
+            self.text_area.insert(tk.END, "—" * 45 + "\n", "divider")
+            self.text_area.see(tk.END)
+        self.root.after(0, _insert)
+
     def display_response(self, response):
         def _insert():
-            self.text_area.insert(tk.END, f"\nAI: {response}\n")
+            self.text_area.insert(tk.END, f"\nAI: {response}\n", "answer")
             self.text_area.see(tk.END)
         self.root.after(0, _insert)
     
